@@ -1,5 +1,8 @@
-.sanityshield-blur {
-  position: relative;
+.sanityshield-wrapped {
+  position: relative !important; 
+}
+
+.sanityshield-blur-inner {
   filter: blur(6px);
 }
 
@@ -17,4 +20,5 @@
   text-align: center;
   padding: 8px;
   box-sizing: border-box;
+  pointer-events: auto;
 }

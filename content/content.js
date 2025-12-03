@@ -1,19 +1,16 @@
 console.log('[SanityShield] Content script loaded on', window.location.href);
 window.SanityShieldLoaded = true;
 
-// Current settings
 let sanitySettings = {
   enabled: true,
-  keywords: ['politics', 'war', 'election', 'crisis']
+  keywords: ['']
 };
 
-// Get initial settings
 chrome.storage.sync.get(sanitySettings, (data) => {
   sanitySettings = data;
   runFiltering();
 });
 
-// Listen for settings changes
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== 'sync') return;
 
@@ -24,7 +21,6 @@ chrome.storage.onChanged.addListener((changes, area) => {
     sanitySettings.keywords = changes.keywords.newValue;
   }
 
-  // Re-run on changes
   runFiltering(true);
 });
 
@@ -44,37 +40,67 @@ function runFiltering(force = false) {
   }
 }
 
+function escapeRegex(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
 
 function textMatchesBlocked(text) {
   if (!text) return false;
-  const lower = text.toLowerCase();
-  return sanitySettings.keywords.some(kw =>
-    kw && lower.includes(kw.toLowerCase())
-  );
+
+  for (const kw of sanitySettings.keywords) {
+    if (!kw) continue;
+
+    const trimmed = kw.trim();
+    if (!trimmed) continue;
+
+    const pattern = new RegExp(`\\b${escapeRegex(trimmed)}\\w*`, 'i');
+
+    if (pattern.test(text)) {
+      console.log(`[SanityShield] Matched keyword: "${trimmed}"`);
+      return trimmed; 
+    }
+  }
+
+  return false;
 }
 
 function blurElement(el) {
-  if (el.classList.contains('sanityshield-blur')) return;
+  if (el.classList.contains('sanityshield-wrapped')) return;
 
-  el.classList.add('sanityshield-blur');
+  el.classList.add('sanityshield-wrapped');
+
+  const blurWrapper = document.createElement('div');
+  blurWrapper.className = 'sanityshield-blur-inner';
+
+  while (el.firstChild) {
+    blurWrapper.appendChild(el.firstChild);
+  }
+
+  el.appendChild(blurWrapper);
 
   const overlay = document.createElement('div');
   overlay.className = 'sanityshield-overlay';
-  overlay.textContent = 'Hidden by SanityShield - click to reveal';
+  overlay.textContent = 'Hidden by SanityShield - Click to reveal';
 
   overlay.addEventListener('click', (e) => {
     e.stopPropagation();
-    el.classList.remove('sanityshield-blur');
-    overlay.remove();
+
+    while (blurWrapper.firstChild) {
+      el.appendChild(blurWrapper.firstChild);
+    }
+
+    blurWrapper.remove();
+    overlay.remove();     
+    el.classList.remove('sanityshield-wrapped');
   });
 
   el.appendChild(overlay);
 }
 
+
 function filterReddit() {
   console.log('[SanityShield] Filtering Reddit posts (shreddit-post)...');
 
-  // All main post components
   const posts = document.querySelectorAll('shreddit-post');
 
   console.log('[SanityShield] Found shreddit-post elements:', posts.length);
@@ -82,33 +108,21 @@ function filterReddit() {
   posts.forEach(post => {
     if (post.dataset.sanityChecked === '1') return;
 
-    // 1) Get title from attribute
     const title = post.getAttribute('post-title') || '';
 
-    // 2) Get subreddit from attribute
-    const subreddit = post.getAttribute('subreddit-prefixed-name') || '';
-
-    // 3) Get text body preview if available
     const bodyEl = post.querySelector('[property="schema:articleBody"]');
     const bodyText = bodyEl ? bodyEl.innerText : '';
 
-    // 4) Combine text for keyword-based filtering
-    const combinedText = `${title}\n${bodyText}\n${subreddit}`;
+    const combinedText = `${title}\n${bodyText}`;
 
     const byKeyword = textMatchesBlocked(combinedText);
 
-    // If you have subreddit-based blocking, use it here
-    let bySubreddit = false;
-    if (typeof subredditMatchesBlocked === 'function') {
-      bySubreddit = subredditMatchesBlocked(subreddit);
-    }
+    console.log(combinedText);
 
-    if (byKeyword || bySubreddit) {
+    if (byKeyword) {
       console.log('[SanityShield] Blurring Reddit post:', {
-        subreddit,
         title,
-        byKeyword,
-        bySubreddit
+        byKeyword
       });
       blurElement(post);
     }
@@ -120,19 +134,15 @@ function filterReddit() {
 function filterTwitter() {
   console.log('[SanityShield] Filtering X/Twitter tweets...');
 
-  // Each tweet in the feed
   const tweets = document.querySelectorAll('article[data-testid="tweet"]');
   console.log('[SanityShield] Found tweets:', tweets.length);
 
   tweets.forEach(tweet => {
-    // Avoid re-processing same tweet
     if (tweet.dataset.sanityChecked === '1') return;
 
-    // 1) Tweet main text
     const textEl = tweet.querySelector('div[data-testid="tweetText"]');
     const text = textEl ? textEl.innerText : '';
 
-    // 2) Username / handle (optional, for author-based filtering)
     const userBlock = tweet.querySelector('div[data-testid="User-Name"]');
     let name = '';
     let handle = '';
@@ -142,25 +152,19 @@ function filterTwitter() {
       if (nameSpan) name = nameSpan.innerText;
 
       const handleSpan = userBlock.querySelector('a[tabindex="-1"] div[dir="ltr"] span');
-      if (handleSpan) handle = handleSpan.innerText; // like @narendramodi
+      if (handleSpan) handle = handleSpan.innerText;
     }
 
     const combinedText = `${name}\n${handle}\n${text}`;
 
     const byKeyword = textMatchesBlocked(combinedText);
-    let byAuthor = false;
 
-    if (typeof authorMatchesBlocked === 'function') {
-      byAuthor = authorMatchesBlocked(handle || name);
-    }
-
-    if (byKeyword || byAuthor) {
+    if (byKeyword) {
       console.log('[SanityShield] Blurring tweet:', {
         name,
         handle,
         preview: text.slice(0, 80),
-        byKeyword,
-        byAuthor
+        byKeyword
       });
       blurElement(tweet);
     }

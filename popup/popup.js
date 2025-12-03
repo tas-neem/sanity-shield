@@ -6,7 +6,7 @@ const status = document.getElementById('status');
 // Default settings
 const DEFAULT_SETTINGS = {
   enabled: true,
-  keywords: ['politics', 'war', 'election', 'crisis']
+  keywords: ['']
 };
 
 document.addEventListener('DOMContentLoaded', () => {
