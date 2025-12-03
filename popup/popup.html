@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>SanityShield</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <h1>SanityShield</h1>
+
+  <label class="toggle">
+    <input type="checkbox" id="enabledToggle">
+    <span>Filtering enabled</span>
+  </label>
+
+  <label for="keywords">Blocked keywords (one per line):</label>
+  <textarea id="keywords" rows="8" placeholder="politics&#10;war&#10;election"></textarea>
+
+  <button id="saveButton">Save</button>
+  <p id="status"></p>
+
+  <small class="hint">
+    Posts containing any of these words will be blurred on Reddit and X.
+  </small>
+
+  <script src="popup.js"></script>
+</body>
+</html>
