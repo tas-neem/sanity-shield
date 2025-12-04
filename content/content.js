@@ -97,16 +97,14 @@ function blurElement(el) {
   el.appendChild(overlay);
 }
 
-
-function filterReddit() {
+function filterReddit(force = false) {
   console.log('[SanityShield] Filtering Reddit posts (shreddit-post)...');
 
   const posts = document.querySelectorAll('shreddit-post');
-
   console.log('[SanityShield] Found shreddit-post elements:', posts.length);
 
   posts.forEach(post => {
-    if (post.dataset.sanityChecked === '1') return;
+    if (!force && post.dataset.sanityChecked === '1') return;
 
     const title = post.getAttribute('post-title') || '';
 
@@ -131,14 +129,14 @@ function filterReddit() {
   });
 }
 
-function filterTwitter() {
+function filterTwitter(force = false) {
   console.log('[SanityShield] Filtering X/Twitter tweets...');
 
   const tweets = document.querySelectorAll('article[data-testid="tweet"]');
   console.log('[SanityShield] Found tweets:', tweets.length);
 
   tweets.forEach(tweet => {
-    if (tweet.dataset.sanityChecked === '1') return;
+    if (!force && tweet.dataset.sanityChecked === '1') return;
 
     const textEl = tweet.querySelector('div[data-testid="tweetText"]');
     const text = textEl ? textEl.innerText : '';
