@@ -3,12 +3,13 @@ window.SanityShieldLoaded = true;
 
 let sanitySettings = {
   enabled: true,
-  keywords: ['']
+  keywords: []
 };
 
 chrome.storage.sync.get(sanitySettings, (data) => {
-  sanitySettings = data;
-  runFiltering();
+  sanitySettings.enabled = data.enabled;
+  sanitySettings.keywords = cleanKeywords(data.keywords || []);
+  runFiltering(true);
 });
 
 chrome.storage.onChanged.addListener((changes, area) => {
@@ -18,11 +19,17 @@ chrome.storage.onChanged.addListener((changes, area) => {
     sanitySettings.enabled = changes.enabled.newValue;
   }
   if (changes.keywords) {
-    sanitySettings.keywords = changes.keywords.newValue;
+    sanitySettings.keywords = cleanKeywords(changes.keywords.newValue || []);
   }
 
   runFiltering(true);
 });
+
+function cleanKeywords(list) {
+  return list
+    .map(k => k.trim())
+    .filter(k => k.length > 0);
+}
 
 function runFiltering(force = false) {
   if (!sanitySettings.enabled) {
@@ -46,8 +53,9 @@ function escapeRegex(str) {
 
 function textMatchesBlocked(text) {
   if (!text) return false;
+  const keywords = sanitySettings.keywords || [];
 
-  for (const kw of sanitySettings.keywords) {
+  for (const kw of keywords) {
     if (!kw) continue;
 
     const trimmed = kw.trim();
@@ -64,7 +72,7 @@ function textMatchesBlocked(text) {
   return false;
 }
 
-function blurElement(el) {
+function blurElement(el, keyword) {
   if (el.classList.contains('sanityshield-wrapped')) return;
 
   el.classList.add('sanityshield-wrapped');
@@ -80,7 +88,10 @@ function blurElement(el) {
 
   const overlay = document.createElement('div');
   overlay.className = 'sanityshield-overlay';
-  overlay.textContent = 'Hidden by SanityShield - Click to reveal';
+
+  overlay.textContent = keyword
+    ? `Hidden by SanityShield (matched: "${keyword}") - Click to reveal`
+    : 'Hidden by SanityShield - Click to reveal';
 
   overlay.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -90,7 +101,7 @@ function blurElement(el) {
     }
 
     blurWrapper.remove();
-    overlay.remove();     
+    overlay.remove();
     el.classList.remove('sanityshield-wrapped');
   });
 
@@ -98,6 +109,9 @@ function blurElement(el) {
 }
 
 function filterReddit(force = false) {
+  if (window.location.pathname.includes('/comments/')) {
+    return;
+  }
   console.log('[SanityShield] Filtering Reddit posts (shreddit-post)...');
 
   const posts = document.querySelectorAll('shreddit-post');
@@ -122,7 +136,7 @@ function filterReddit(force = false) {
         title,
         byKeyword
       });
-      blurElement(post);
+      blurElement(post,byKeyword);
     }
 
     post.dataset.sanityChecked = '1';
@@ -164,15 +178,30 @@ function filterTwitter(force = false) {
         preview: text.slice(0, 80),
         byKeyword
       });
-      blurElement(tweet);
+      blurElement(tweet,byKeyword);
     }
 
     tweet.dataset.sanityChecked = '1';
   });
 }
 
-setInterval(() => {
-  if (sanitySettings.enabled) {
-    runFiltering();
+function observePageChanges() {
+  const body = document.body;
+  if (!body) {
+    document.addEventListener('DOMContentLoaded', observePageChanges, { once: true });
+    return;
   }
-}, 2000);
+
+  const observer = new MutationObserver(() => {
+    if (sanitySettings.enabled) {
+      runFiltering();
+    }
+  });
+
+  observer.observe(body, {
+    childList: true,
+    subtree: true,
+  });
+}
+
+observePageChanges();

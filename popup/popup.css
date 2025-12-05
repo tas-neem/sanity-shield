@@ -2,6 +2,7 @@ body {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   margin: 12px;
   width: 260px;
+  color: #0f172a;
 }
 
 h1 {
@@ -18,6 +19,10 @@ h1 {
   font-size: 14px;
 }
 
+.toggle input {
+  cursor: pointer;
+}
+
 label {
   font-size: 13px;
   display: block;
@@ -30,8 +35,61 @@ textarea {
   font-family: monospace;
   font-size: 12px;
   padding: 6px;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   resize: vertical;
+  border-radius: 4px;
+  border: 1px solid #d1d5db;
+}
+
+textarea:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.25);
+}
+
+.summary {
+  font-size: 11px;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  font-size: 11px;
+  border-radius: 999px;
+  background: #e5e7eb;
+  color: #111827;
+}
+
+.chip-remove {
+  border: none;
+  background: transparent;
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  color: #6b7280;
+}
+
+.chip-remove:hover {
+  color: #ef4444;
+}
+
+.actions-row {
+  display: flex;
+  align-items: center;
+  margin-top: 4px;
+  margin-bottom: 2px;
 }
 
 button {
@@ -49,7 +107,6 @@ button:hover {
 }
 
 #status {
-  display: inline-block;
   margin-left: 8px;
   font-size: 12px;
   color: #16a34a;

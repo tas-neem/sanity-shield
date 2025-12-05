@@ -14,13 +14,22 @@
   </label>
 
   <label for="keywords">Blocked keywords (one per line):</label>
-  <textarea id="keywords" rows="8" placeholder="politics&#10;war&#10;election"></textarea>
+  <textarea
+    id="keywords"
+    rows="8"
+    placeholder="exams&#10;diet&#10;politics"></textarea>
 
-  <button id="saveButton">Save</button>
-  <p id="status"></p>
+  <div id="keywordSummary" class="summary"></div>
+  <div id="keywordChips" class="chips"></div>
+
+  <div class="actions-row">
+    <button id="saveButton">Save</button>
+    <p id="status"></p>
+  </div>
 
   <small class="hint">
-    Posts containing any of these words will be blurred on Reddit and X.
+    Posts containing any of these words will be blurred on Reddit and X.<br>
+    Use it for topics that drain you (e.g. exams, diets, politics).
   </small>
 
   <script src="popup.js"></script>
